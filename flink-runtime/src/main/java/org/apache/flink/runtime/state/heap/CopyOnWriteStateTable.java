@@ -451,7 +451,7 @@ public class CopyOnWriteStateTable<K, N, S> extends StateTable<K, N, S> implemen
 	 * @throws Exception exception that happen on applying the function.
 	 * @see #transform(Object, Object, StateTransformationFunction).
 	 */
-	<T> void transform(
+	public <T> void transform(
 			K key,
 			N namespace,
 			T value,

@@ -25,7 +25,7 @@ under the License.
 	<parent>
 		<groupId>org.apache.flink</groupId>
 		<artifactId>flink-parent</artifactId>
-		<version>1.6-SNAPSHOT</version>
+		<version>1.6-GIO</version>
 		<relativePath>..</relativePath>
 	</parent>
 
@@ -356,11 +356,11 @@ under the License.
 			<scope>provided</scope>
 		</dependency>
 
+		<!-- we need this queryable server to recover data -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-queryable-state-runtime_${scala.binary.version}</artifactId>
 			<version>${project.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<!-- end optional Flink libraries -->
 

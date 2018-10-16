@@ -305,6 +305,22 @@ public class NestedMapsStateTable<K, N, S> extends StateTable<K, N, S> {
 		keyedMap.put(key, transformation.apply(keyedMap.get(key), value));
 	}
 
+	@Override
+	public <T> void transform(K key, N namespace, T value, StateTransformationFunction<S, T> transformation) throws Exception {
+		checkKeyNamespacePreconditions(key, namespace);
+		final int keyGroupIndex = KeyGroupRangeAssignment.assignToKeyGroup(key, keyContext.getNumberOfKeyGroups());
+
+		Map<N, Map<K, S>> namespaceMap = getMapForKeyGroup(keyGroupIndex);
+
+		if (namespaceMap == null) {
+			namespaceMap = new HashMap<>();
+			setMapForKeyGroup(keyGroupIndex, namespaceMap);
+		}
+
+		Map<K, S> keyedMap = namespaceMap.computeIfAbsent(namespace, k -> new HashMap<>());
+		keyedMap.put(key, transformation.apply(keyedMap.get(key), value));
+	}
+
 	// snapshots ---------------------------------------------------------------------------------------------------
 
 	private static <K, N, S> int countMappingsInKeyGroup(final Map<N, Map<K, S>> keyGroupMap) {

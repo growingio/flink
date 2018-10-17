@@ -332,7 +332,7 @@ public class AvroSplittableInputFormatTest {
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-hadoop-compatibility_2.11</artifactId>
-			<version>1.6-SNAPSHOT</version>
+			<version>1.6-GIO</version>
 		</dependency>
 
 		<dependency>

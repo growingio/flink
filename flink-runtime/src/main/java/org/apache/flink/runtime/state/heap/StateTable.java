@@ -151,6 +151,15 @@ public abstract class StateTable<K, N, S> implements StateSnapshotRestore {
 			T value,
 			StateTransformationFunction<S, T> transformation) throws Exception;
 
+	/**
+	 * This is used for queryable state.
+	 */
+	public abstract <T> void transform(
+		K key,
+		N namespace,
+		T value,
+		StateTransformationFunction<S, T> transformation) throws Exception;
+
 	// For queryable state ------------------------------------------------------------------------
 
 	/**

@@ -910,6 +910,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 				getAddress(),
 				getResourceID(),
 				taskManagerLocation.dataPort(),
+				networkEnvironment.getKvStateProxy().getServerAddress().getPort(),
 				hardwareDescription,
 				resourceManagerAddress.getAddress(),
 				resourceManagerAddress.getResourceManagerId(),

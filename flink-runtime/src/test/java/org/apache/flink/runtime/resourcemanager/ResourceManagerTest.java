@@ -115,11 +115,13 @@ public class ResourceManagerTest extends TestLogger {
 				0L);
 
 			final int dataPort = 1234;
+			final int proxyPort = 4567;
 
 			CompletableFuture<RegistrationResponse> registrationResponseFuture = resourceManagerGateway.registerTaskExecutor(
 				taskExecutorGateway.getAddress(),
 				taskManagerId,
 				dataPort,
+				proxyPort,
 				hardwareDescription,
 				TestingUtils.TIMEOUT());
 

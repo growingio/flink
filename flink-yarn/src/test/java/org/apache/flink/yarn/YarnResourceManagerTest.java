@@ -226,6 +226,7 @@ public class YarnResourceManagerTest extends TestLogger {
 		final TestingYarnResourceManager resourceManager;
 
 		final int dataPort = 1234;
+		final int proxyPort = 4567;
 		final HardwareDescription hardwareDescription = new HardwareDescription(1, 2L, 3L, 4L);
 
 		// domain objects for test purposes
@@ -371,6 +372,7 @@ public class YarnResourceManagerTest extends TestLogger {
 					taskHost,
 					taskManagerResourceId,
 					dataPort,
+					proxyPort,
 					hardwareDescription,
 					Time.seconds(10L))
 				.thenCompose(

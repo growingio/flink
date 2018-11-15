@@ -487,6 +487,7 @@ public class ResourceManagerTest extends TestLogger {
 	@Test
 	public void testHeartbeatTimeoutWithTaskExecutor() throws Exception {
 		final int dataPort = 1234;
+		final int proxyPort = 4567;
 		final HardwareDescription hardwareDescription = new HardwareDescription(1, 2L, 3L, 4L);
 		final String taskManagerAddress = "tm";
 		final ResourceID taskManagerResourceID = new ResourceID(taskManagerAddress);
@@ -544,6 +545,7 @@ public class ResourceManagerTest extends TestLogger {
 				taskManagerAddress,
 				taskManagerResourceID,
 				dataPort,
+				proxyPort,
 				hardwareDescription,
 				timeout);
 			RegistrationResponse response = successfulFuture.get(timeout.toMilliseconds(), TimeUnit.MILLISECONDS);

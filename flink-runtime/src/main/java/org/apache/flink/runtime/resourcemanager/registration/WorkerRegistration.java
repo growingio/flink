@@ -32,18 +32,22 @@ public class WorkerRegistration<WorkerType extends ResourceIDRetrievable> extend
 
 	private final int dataPort;
 
+	private final int proxyPort;
+
 	private final HardwareDescription hardwareDescription;
 
 	public WorkerRegistration(
 			TaskExecutorGateway taskExecutorGateway,
 			WorkerType worker,
 			int dataPort,
+			int proxyPort,
 			HardwareDescription hardwareDescription) {
 
 		super(worker.getResourceID(), taskExecutorGateway);
 
 		this.worker = Preconditions.checkNotNull(worker);
 		this.dataPort = dataPort;
+		this.proxyPort = proxyPort;
 		this.hardwareDescription = Preconditions.checkNotNull(hardwareDescription);
 	}
 
@@ -53,6 +57,10 @@ public class WorkerRegistration<WorkerType extends ResourceIDRetrievable> extend
 
 	public int getDataPort() {
 		return dataPort;
+	}
+
+	public int getProxyPort() {
+		return proxyPort;
 	}
 
 	public HardwareDescription getHardwareDescription() {

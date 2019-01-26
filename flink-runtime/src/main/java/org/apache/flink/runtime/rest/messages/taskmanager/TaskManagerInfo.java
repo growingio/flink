@@ -45,6 +45,8 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
 
 	public static final String FIELD_NAME_DATA_PORT = "dataPort";
 
+	public static final String FIELD_NAME_PROXY_PORT = "proxyPort";
+
 	public static final String FIELD_NAME_LAST_HEARTBEAT = "timeSinceLastHeartbeat";
 
 	public static final String FIELD_NAME_NUMBER_SLOTS = "slotsNumber";
@@ -65,6 +67,9 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
 	@JsonProperty(FIELD_NAME_DATA_PORT)
 	private final int dataPort;
 
+	@JsonProperty(FIELD_NAME_PROXY_PORT)
+	private final int proxyPort;
+
 	@JsonProperty(FIELD_NAME_LAST_HEARTBEAT)
 	private final long lastHeartbeat;
 
@@ -82,6 +87,7 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
 			@JsonDeserialize(using = ResourceIDDeserializer.class) @JsonProperty(FIELD_NAME_RESOURCE_ID) ResourceID resourceId,
 			@JsonProperty(FIELD_NAME_ADDRESS) String address,
 			@JsonProperty(FIELD_NAME_DATA_PORT) int dataPort,
+			@JsonProperty(FIELD_NAME_PROXY_PORT) int proxyPort,
 			@JsonProperty(FIELD_NAME_LAST_HEARTBEAT) long lastHeartbeat,
 			@JsonProperty(FIELD_NAME_NUMBER_SLOTS) int numberSlots,
 			@JsonProperty(FIELD_NAME_NUMBER_AVAILABLE_SLOTS) int numberAvailableSlots,
@@ -89,6 +95,7 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
 		this.resourceId = Preconditions.checkNotNull(resourceId);
 		this.address = Preconditions.checkNotNull(address);
 		this.dataPort = dataPort;
+		this.proxyPort = proxyPort;
 		this.lastHeartbeat = lastHeartbeat;
 		this.numberSlots = numberSlots;
 		this.numberAvailableSlots = numberAvailableSlots;
@@ -105,6 +112,10 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
 
 	public int getDataPort() {
 		return dataPort;
+	}
+
+	public int getProxyPort() {
+		return proxyPort;
 	}
 
 	public long getLastHeartbeat() {
@@ -133,6 +144,7 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
 		}
 		TaskManagerInfo that = (TaskManagerInfo) o;
 		return dataPort == that.dataPort &&
+			proxyPort == that.proxyPort &&
 			lastHeartbeat == that.lastHeartbeat &&
 			numberSlots == that.numberSlots &&
 			numberAvailableSlots == that.numberAvailableSlots &&
@@ -147,6 +159,7 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
 			resourceId,
 			address,
 			dataPort,
+			proxyPort,
 			lastHeartbeat,
 			numberSlots,
 			numberAvailableSlots,

@@ -347,6 +347,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 			final String taskExecutorAddress,
 			final ResourceID taskExecutorResourceId,
 			final int dataPort,
+			final int proxyPort,
 			final HardwareDescription hardwareDescription,
 			final Time timeout) {
 
@@ -362,6 +363,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 						taskExecutorAddress,
 						taskExecutorResourceId,
 						dataPort,
+						proxyPort,
 						hardwareDescription);
 				}
 			},
@@ -540,6 +542,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 					resourceId,
 					taskExecutor.getTaskExecutorGateway().getAddress(),
 					taskExecutor.getDataPort(),
+					taskExecutor.getProxyPort(),
 					taskManagerHeartbeatManager.getLastHeartbeatFrom(resourceId),
 					slotManager.getNumberRegisteredSlotsOf(taskExecutor.getInstanceID()),
 					slotManager.getNumberFreeSlotsOf(taskExecutor.getInstanceID()),
@@ -562,11 +565,11 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 				resourceId,
 				taskExecutor.getTaskExecutorGateway().getAddress(),
 				taskExecutor.getDataPort(),
+				taskExecutor.getProxyPort(),
 				taskManagerHeartbeatManager.getLastHeartbeatFrom(resourceId),
 				slotManager.getNumberRegisteredSlotsOf(instanceId),
 				slotManager.getNumberFreeSlotsOf(instanceId),
 				taskExecutor.getHardwareDescription());
-
 			return CompletableFuture.completedFuture(taskManagerInfo);
 		}
 	}
@@ -696,6 +699,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 			String taskExecutorAddress,
 			ResourceID taskExecutorResourceId,
 			int dataPort,
+			int proxyPort,
 			HardwareDescription hardwareDescription) {
 		WorkerRegistration<WorkerType> oldRegistration = taskExecutors.remove(taskExecutorResourceId);
 		if (oldRegistration != null) {
@@ -714,7 +718,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 			return new RegistrationResponse.Decline("unrecognized TaskExecutor");
 		} else {
 			WorkerRegistration<WorkerType> registration =
-				new WorkerRegistration<>(taskExecutorGateway, newWorker, dataPort, hardwareDescription);
+				new WorkerRegistration<>(taskExecutorGateway, newWorker, dataPort, proxyPort, hardwareDescription);
 
 			taskExecutors.put(taskExecutorResourceId, registration);
 

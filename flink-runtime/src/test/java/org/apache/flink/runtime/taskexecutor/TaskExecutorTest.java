@@ -22,7 +22,7 @@ import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.api.java.tuple.Tuple4;
+import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.core.testutils.OneShotLatch;
@@ -554,7 +554,7 @@ public class TaskExecutorTest extends TestLogger {
 		// register a mock resource manager gateway
 		ResourceManagerGateway rmGateway = mock(ResourceManagerGateway.class);
 		when(rmGateway.registerTaskExecutor(
-					anyString(), any(ResourceID.class), anyInt(), any(HardwareDescription.class), any(Time.class)))
+					anyString(), any(ResourceID.class), anyInt(), anyInt(), any(HardwareDescription.class), any(Time.class)))
 			.thenReturn(CompletableFuture.completedFuture(new TaskExecutorRegistrationSuccess(
 				new InstanceID(), resourceManagerResourceId, 10L, new ClusterInformation("localhost", 1234))));
 
@@ -596,7 +596,7 @@ public class TaskExecutorTest extends TestLogger {
 			String taskManagerAddress = taskManager.getAddress();
 
 			verify(rmGateway, Mockito.timeout(timeout.toMilliseconds())).registerTaskExecutor(
-					eq(taskManagerAddress), eq(taskManagerLocation.getResourceID()), anyInt(), any(HardwareDescription.class), any(Time.class));
+					eq(taskManagerAddress), eq(taskManagerLocation.getResourceID()), anyInt(), anyInt(), any(HardwareDescription.class), any(Time.class));
 		}
 		finally {
 			taskManager.shutDown();
@@ -618,11 +618,11 @@ public class TaskExecutorTest extends TestLogger {
 		ResourceManagerGateway rmGateway2 = mock(ResourceManagerGateway.class);
 
 		when(rmGateway1.registerTaskExecutor(
-					anyString(), any(ResourceID.class), anyInt(), any(HardwareDescription.class), any(Time.class)))
+					anyString(), any(ResourceID.class), anyInt(), anyInt(), any(HardwareDescription.class), any(Time.class)))
 			.thenReturn(CompletableFuture.completedFuture(
 				new TaskExecutorRegistrationSuccess(new InstanceID(), rmResourceId1, 10L, new ClusterInformation("localhost", 1234))));
 		when(rmGateway2.registerTaskExecutor(
-					anyString(), any(ResourceID.class), anyInt(), any(HardwareDescription.class), any(Time.class)))
+					anyString(), any(ResourceID.class), anyInt(), anyInt(), any(HardwareDescription.class), any(Time.class)))
 			.thenReturn(CompletableFuture.completedFuture(
 				new TaskExecutorRegistrationSuccess(new InstanceID(), rmResourceId2, 10L, new ClusterInformation("localhost", 1234))));
 
@@ -665,7 +665,7 @@ public class TaskExecutorTest extends TestLogger {
 			resourceManagerLeaderRetriever.notifyListener(address1, leaderId1);
 
 			verify(rmGateway1, Mockito.timeout(timeout.toMilliseconds())).registerTaskExecutor(
-					eq(taskManagerAddress), eq(taskManagerLocation.getResourceID()), anyInt(), any(HardwareDescription.class), any(Time.class));
+					eq(taskManagerAddress), eq(taskManagerLocation.getResourceID()), anyInt(), anyInt(), any(HardwareDescription.class), any(Time.class));
 			assertNotNull(taskManager.getResourceManagerConnection());
 
 			// cancel the leader 
@@ -675,7 +675,7 @@ public class TaskExecutorTest extends TestLogger {
 			resourceManagerLeaderRetriever.notifyListener(address2, leaderId2);
 
 			verify(rmGateway2, Mockito.timeout(timeout.toMilliseconds())).registerTaskExecutor(
-					eq(taskManagerAddress), eq(taskManagerLocation.getResourceID()), anyInt(), any(HardwareDescription.class), any(Time.class));
+					eq(taskManagerAddress), eq(taskManagerLocation.getResourceID()), anyInt(), anyInt(), any(HardwareDescription.class), any(Time.class));
 			assertNotNull(taskManager.getResourceManagerConnection());
 		}
 		finally {
@@ -1662,9 +1662,9 @@ public class TaskExecutorTest extends TestLogger {
 
 			final CountDownLatch numberRegistrations = new CountDownLatch(2);
 
-			testingResourceManagerGateway.setRegisterTaskExecutorFunction(new Function<Tuple4<String, ResourceID, Integer, HardwareDescription>, CompletableFuture<RegistrationResponse>>() {
+			testingResourceManagerGateway.setRegisterTaskExecutorFunction(new Function<Tuple5<String, ResourceID, Integer, Integer, HardwareDescription>, CompletableFuture<RegistrationResponse>>() {
 				@Override
-				public CompletableFuture<RegistrationResponse> apply(Tuple4<String, ResourceID, Integer, HardwareDescription> stringResourceIDIntegerHardwareDescriptionTuple4) {
+				public CompletableFuture<RegistrationResponse> apply(Tuple5<String, ResourceID, Integer, Integer, HardwareDescription> stringResourceIDIntegerHardwareDescriptionTuple5) {
 					numberRegistrations.countDown();
 					return registrationResponse;
 				}

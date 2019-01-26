@@ -50,6 +50,8 @@ public class TaskExecutorToResourceManagerConnection
 
 	private final int dataPort;
 
+	private final int proxyPort;
+
 	private final HardwareDescription hardwareDescription;
 
 	private final RegistrationConnectionListener<TaskExecutorToResourceManagerConnection, TaskExecutorRegistrationSuccess> registrationListener;
@@ -60,6 +62,7 @@ public class TaskExecutorToResourceManagerConnection
 			String taskManagerAddress,
 			ResourceID taskManagerResourceId,
 			int dataPort,
+			int proxyPort,
 			HardwareDescription hardwareDescription,
 			String resourceManagerAddress,
 			ResourceManagerId resourceManagerId,
@@ -72,6 +75,7 @@ public class TaskExecutorToResourceManagerConnection
 		this.taskManagerAddress = checkNotNull(taskManagerAddress);
 		this.taskManagerResourceId = checkNotNull(taskManagerResourceId);
 		this.dataPort = dataPort;
+		this.proxyPort = proxyPort;
 		this.hardwareDescription = checkNotNull(hardwareDescription);
 		this.registrationListener = checkNotNull(registrationListener);
 	}
@@ -86,6 +90,7 @@ public class TaskExecutorToResourceManagerConnection
 			taskManagerAddress,
 			taskManagerResourceId,
 			dataPort,
+			proxyPort,
 			hardwareDescription);
 	}
 
@@ -117,6 +122,8 @@ public class TaskExecutorToResourceManagerConnection
 
 		private final int dataPort;
 
+		private final int proxyPort;
+
 		private final HardwareDescription hardwareDescription;
 
 		ResourceManagerRegistration(
@@ -127,12 +134,14 @@ public class TaskExecutorToResourceManagerConnection
 				String taskExecutorAddress,
 				ResourceID resourceID,
 				int dataPort,
+				int proxyPort,
 				HardwareDescription hardwareDescription) {
 
 			super(log, rpcService, "ResourceManager", ResourceManagerGateway.class, targetAddress, resourceManagerId);
 			this.taskExecutorAddress = checkNotNull(taskExecutorAddress);
 			this.resourceID = checkNotNull(resourceID);
 			this.dataPort = dataPort;
+			this.proxyPort = proxyPort;
 			this.hardwareDescription = checkNotNull(hardwareDescription);
 		}
 
@@ -145,6 +154,7 @@ public class TaskExecutorToResourceManagerConnection
 				taskExecutorAddress,
 				resourceID,
 				dataPort,
+				proxyPort,
 				hardwareDescription,
 				timeout);
 		}

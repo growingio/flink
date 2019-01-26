@@ -102,6 +102,7 @@ public interface ResourceManagerGateway extends FencedRpcGateway<ResourceManager
 		String taskExecutorAddress,
 		ResourceID resourceId,
 		int dataPort,
+		int proxyPort,
 		HardwareDescription hardwareDescription,
 		@RpcTimeout Time timeout);
 

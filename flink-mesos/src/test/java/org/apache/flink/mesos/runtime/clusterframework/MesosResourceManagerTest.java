@@ -665,10 +665,11 @@ public class MesosResourceManagerTest extends TestLogger {
 			assertThat(resourceManager.workersInLaunch, hasEntry(extractResourceID(task1), worker1launched));
 
 			final int dataPort = 1234;
+			final int proxyPort = 4567;
 			final HardwareDescription hardwareDescription = new HardwareDescription(1, 2L, 3L, 4L);
 			// send registration message
 			CompletableFuture<RegistrationResponse> successfulFuture =
-				resourceManager.registerTaskExecutor(task1Executor.address, task1Executor.resourceID, dataPort, hardwareDescription, timeout);
+				resourceManager.registerTaskExecutor(task1Executor.address, task1Executor.resourceID, dataPort, proxyPort, hardwareDescription, timeout);
 			RegistrationResponse response = successfulFuture.get(timeout.toMilliseconds(), TimeUnit.MILLISECONDS);
 			assertTrue(response instanceof TaskExecutorRegistrationSuccess);
 			final TaskExecutorRegistrationSuccess registrationResponse = (TaskExecutorRegistrationSuccess) response;

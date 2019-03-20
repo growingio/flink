@@ -505,7 +505,7 @@ class TaskManager(
         val timestamp = message.getTimestamp
         val checkpointOptions = message.getCheckpointOptions
 
-        log.debug(s"Receiver TriggerCheckpoint $checkpointId@$timestamp for $taskExecutionId.")
+        log.info(s"Receiver TriggerCheckpoint $checkpointId@$timestamp for $taskExecutionId.")
 
         val task = runningTasks.get(taskExecutionId)
         if (task != null) {

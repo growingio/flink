@@ -239,7 +239,7 @@ public class QueryableStateClient {
 	 * @param stateDescriptor			The {@link StateDescriptor} of the state we want to query.
 	 * @return Future holding the immutable {@link State} object containing the result.
 	 */
-	private <K, N, S extends State, V> CompletableFuture<S> getKvState(
+	public <K, N, S extends State, V> CompletableFuture<S> getKvState(
 			final JobID jobId,
 			final String queryableStateName,
 			final K key,
@@ -310,6 +310,93 @@ public class QueryableStateClient {
 		LOG.debug("Sending State Request to {}.", remoteAddress);
 		try {
 			KvStateRequest request = new KvStateRequest(jobId, queryableStateName, keyHashCode, serializedKeyAndNamespace);
+			return client.sendRequest(remoteAddress, request);
+		} catch (Exception e) {
+			LOG.error("Unable to send KVStateRequest: ", e);
+			return FutureUtils.getFailedFuture(e);
+		}
+	}
+
+	/**
+	 * Same as the method above. Just replace the typeInfo with seriealizer.
+	 */
+	public <K, N, S extends State, V> CompletableFuture<S> getKvState(
+		final JobID jobId,
+		final String queryableStateName,
+		final K key,
+		final N namespace,
+		final TypeSerializer<K> keySerializer,
+		final TypeSerializer<N> namespaceSerializer,
+		final StateDescriptor<S, V> stateDescriptor) {
+		Preconditions.checkNotNull(jobId);
+		Preconditions.checkNotNull(queryableStateName);
+		Preconditions.checkNotNull(key);
+		Preconditions.checkNotNull(namespace);
+
+		Preconditions.checkNotNull(keySerializer);
+		Preconditions.checkNotNull(namespaceSerializer);
+		Preconditions.checkNotNull(stateDescriptor);
+
+		stateDescriptor.initializeSerializerUnlessSet(executionConfig);
+
+		final byte[] serializedKeyAndNamespace;
+		try {
+			serializedKeyAndNamespace = KvStateSerializer
+				.serializeKeyAndNamespace(key, keySerializer, namespace, namespaceSerializer);
+		} catch (IOException e) {
+			return FutureUtils.getFailedFuture(e);
+		}
+
+		return getKvState(jobId, queryableStateName, key.hashCode(), serializedKeyAndNamespace)
+			.thenApply(stateResponse -> createState(stateResponse, stateDescriptor));
+	}
+
+	/**
+	 * Same as the method above. Just replace the typeInfo with seriealizer.
+	 */
+	public <K, N, S extends State, V> CompletableFuture<S> getAndMerge(
+		final JobID jobId,
+		final String queryableStateName,
+		final K key,
+		final N namespace,
+		final TypeSerializer<K> keySerializer,
+		final TypeSerializer<N> namespaceSerializer,
+		final StateDescriptor<S, V> stateDescriptor,
+		final byte[] mergeValue) {
+		Preconditions.checkNotNull(jobId);
+		Preconditions.checkNotNull(queryableStateName);
+		Preconditions.checkNotNull(key);
+		Preconditions.checkNotNull(namespace);
+
+		Preconditions.checkNotNull(keySerializer);
+		Preconditions.checkNotNull(namespaceSerializer);
+		Preconditions.checkNotNull(stateDescriptor);
+
+		stateDescriptor.initializeSerializerUnlessSet(executionConfig);
+
+		final byte[] serializedKeyAndNamespace;
+		try {
+			serializedKeyAndNamespace = KvStateSerializer
+				.serializeKeyAndNamespace(key, keySerializer, namespace, namespaceSerializer);
+		} catch (IOException e) {
+			return FutureUtils.getFailedFuture(e);
+		}
+
+		return getAndMergeKvState(jobId, queryableStateName, key.hashCode(),
+			serializedKeyAndNamespace, mergeValue).thenApply(
+			stateResponse -> createState(stateResponse, stateDescriptor));
+	}
+
+	private CompletableFuture<KvStateResponse> getAndMergeKvState(
+		final JobID jobId,
+		final String queryableStateName,
+		final int keyHashCode,
+		final byte[] serializedKeyAndNamespace,
+		final byte[] mergeValue) {
+		LOG.debug("Sending State Request to {}.", remoteAddress);
+		try {
+			KvStateRequest request = new KvStateRequest(jobId, queryableStateName, keyHashCode,
+				serializedKeyAndNamespace, mergeValue);
 			return client.sendRequest(remoteAddress, request);
 		} catch (Exception e) {
 			LOG.error("Unable to send KVStateRequest: ", e);

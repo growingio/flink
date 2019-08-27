@@ -41,6 +41,7 @@ public class KvStateRequest extends MessageBody {
 	private final String stateName;
 	private final int keyHashCode;
 	private final byte[] serializedKeyAndNamespace;
+	private final byte[] mergeValue;
 
 	public KvStateRequest(
 			final JobID jobId,
@@ -52,6 +53,25 @@ public class KvStateRequest extends MessageBody {
 		this.stateName = Preconditions.checkNotNull(stateName);
 		this.keyHashCode = keyHashCode;
 		this.serializedKeyAndNamespace = Preconditions.checkNotNull(serializedKeyAndNamespace);
+		this.mergeValue = new byte[]{};
+	}
+
+	public KvStateRequest(
+		final JobID jobId,
+		final String stateName,
+		final int keyHashCode,
+		final byte[] serializedKeyAndNamespace,
+		final byte[] mergeValue) {
+
+		this.jobId = Preconditions.checkNotNull(jobId);
+		this.stateName = Preconditions.checkNotNull(stateName);
+		this.keyHashCode = keyHashCode;
+		this.serializedKeyAndNamespace = Preconditions.checkNotNull(serializedKeyAndNamespace);
+		this.mergeValue = mergeValue;
+	}
+
+	public byte[] getMergeValue() {
+		return mergeValue;
 	}
 
 	public JobID getJobId() {
@@ -80,7 +100,8 @@ public class KvStateRequest extends MessageBody {
 				JobID.SIZE +
 				serializedStateName.length + Integer.BYTES +
 				Integer.BYTES +
-				serializedKeyAndNamespace.length + Integer.BYTES;
+				serializedKeyAndNamespace.length + Integer.BYTES +
+				mergeValue.length + Integer.BYTES;
 
 		return ByteBuffer.allocate(size)
 				.putLong(jobId.getLowerPart())
@@ -90,6 +111,8 @@ public class KvStateRequest extends MessageBody {
 				.putInt(keyHashCode)
 				.putInt(serializedKeyAndNamespace.length)
 				.put(serializedKeyAndNamespace)
+				.putInt(mergeValue.length)
+				.put(mergeValue)
 				.array();
 	}
 
@@ -135,7 +158,13 @@ public class KvStateRequest extends MessageBody {
 			if (knamespaceLength > 0) {
 				buf.readBytes(serializedKeyAndNamespace);
 			}
-			return new KvStateRequest(jobId, stateName, keyHashCode, serializedKeyAndNamespace);
+			int mergeValueLength = buf.readInt();
+			byte[] mergeValue = new byte[mergeValueLength];
+			if (mergeValueLength > 0) {
+				buf.readBytes(mergeValue);
+			}
+
+			return new KvStateRequest(jobId, stateName, keyHashCode, serializedKeyAndNamespace, mergeValue);
 		}
 	}
 }

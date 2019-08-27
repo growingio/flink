@@ -835,6 +835,7 @@ public class WindowedStream<T, K, W extends Window> {
 		} else {
 			AggregatingStateDescriptor<T, ACC, V> stateDesc = new AggregatingStateDescriptor<>("window-contents",
 					aggregateFunction, accumulatorType.createSerializer(getExecutionEnvironment().getConfig()));
+			stateDesc.setQueryable(stateDesc.getAggregateFunction().createAccumulator().getClass().getSimpleName());
 
 			operator = new WindowOperator<>(windowAssigner,
 					windowAssigner.getWindowSerializer(getExecutionEnvironment().getConfig()),

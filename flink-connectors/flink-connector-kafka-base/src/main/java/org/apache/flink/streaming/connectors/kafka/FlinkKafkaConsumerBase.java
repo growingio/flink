@@ -508,19 +508,18 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
 		subscribedPartitionsToStartOffsets = new HashMap<>();
 		final List<KafkaTopicPartition> allPartitions = partitionDiscoverer.discoverPartitions();
 
-		List<String> restoredTopics = restoredState.entrySet().stream().map((kv) -> kv.getKey().getTopic())
-			.distinct().collect(Collectors.toList());
-		List<String> discoverTopics = allPartitions.stream().map(KafkaTopicPartition::getTopic)
-			.distinct().collect(Collectors.toList());
-		List<String> newTopics = new ArrayList<>();
-
-		for (String topic: discoverTopics) {
-			if (!restoredTopics.contains(topic)) {
-				newTopics.add(topic);
-			}
-		}
-
 		if (restoredState != null) {
+			List<String> restoredTopics = restoredState.entrySet().stream().map((kv) -> kv.getKey().getTopic())
+				.distinct().collect(Collectors.toList());
+			List<String> discoverTopics = allPartitions.stream().map(KafkaTopicPartition::getTopic)
+				.distinct().collect(Collectors.toList());
+			List<String> newTopics = new ArrayList<>();
+
+			for (String topic: discoverTopics) {
+				if (!restoredTopics.contains(topic)) {
+					newTopics.add(topic);
+				}
+			}
 			for (KafkaTopicPartition partition : allPartitions) {
 				if (!restoredState.containsKey(partition)) {
 					if (newTopics.contains(partition.getTopic())) {

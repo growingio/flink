@@ -37,6 +37,8 @@ public class TaskManagerOptions {
 
 	private static final String MANAGED_MEMORY_PRE_ALLOCATE_KEY = "taskmanager.memory.preallocate";
 
+	public static final String NETWORK_BUFFERS_MEMORY_MAX = "taskmanager.network.memory.max";
+
 	// ------------------------------------------------------------------------
 	//  General TaskManager Options
 	// ------------------------------------------------------------------------

@@ -55,6 +55,12 @@ public class TimestampsAndPunctuatedWatermarksOperator<T>
 	}
 
 	@Override
+	public void open() throws Exception {
+		super.open();
+		output.emitWatermark(new Watermark(currentWatermark));
+	}
+
+	@Override
 	public void processElement(StreamRecord<T> element) throws Exception {
 		final T value = element.getValue();
 		final long newTimestamp = userFunction.extractTimestamp(value,
@@ -113,6 +119,6 @@ public class TimestampsAndPunctuatedWatermarksOperator<T>
 			currentWatermark = Long.MIN_VALUE;
 			LOG.info("No restore state for TimestampsAndPunctuatedWatermarksOperator.");
 		}
-		output.emitWatermark(new Watermark(currentWatermark));
+//		output.emitWatermark(new Watermark(currentWatermark));
 	}
 }

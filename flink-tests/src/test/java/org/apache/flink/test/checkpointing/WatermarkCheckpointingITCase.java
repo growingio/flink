@@ -30,6 +30,7 @@ import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.state.AbstractStateBackend;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.runtime.state.memory.MemoryStateBackend;
+import org.apache.flink.runtime.testutils.MiniClusterResource;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -40,7 +41,6 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.test.checkpointing.utils.WatermarkCheckpointingSource;
 import org.apache.flink.test.checkpointing.utils.WatermarkCheckpointingValidatingSink;
-import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.test.util.SuccessException;
 import org.apache.flink.util.TestLogger;
 
@@ -77,7 +77,7 @@ public class WatermarkCheckpointingITCase extends TestLogger {
 
 	private TestingServer zkServer;
 
-	public MiniClusterWithClientResource miniClusterResource;
+	public MiniClusterResource miniClusterResource;
 
 	@ClassRule
 	public static TemporaryFolder tempFolder = new TemporaryFolder();
@@ -103,8 +103,8 @@ public class WatermarkCheckpointingITCase extends TestLogger {
 		return this.stateBackendEnum;
 	}
 
-	protected final MiniClusterWithClientResource getMiniClusterResource() {
-		return new MiniClusterWithClientResource(
+	protected final MiniClusterResource getMiniClusterResource() {
+		return new MiniClusterResource(
 			new MiniClusterResourceConfiguration.Builder()
 				.setConfiguration(getConfigurationSafe())
 				.setNumberTaskManagers(2)

@@ -152,7 +152,6 @@ public class KvStateServerHandler extends AbstractServerHandler<KvStateInternalR
 		return getSerializedValue(entry, serializedKeyAndNamespace);
 	}
 
-
 	@Override
 	public CompletableFuture<Void> shutdown() {
 		return CompletableFuture.completedFuture(null);

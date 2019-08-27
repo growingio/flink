@@ -353,7 +353,6 @@ public class TimestampITCase extends TestLogger {
 			throw new RuntimeException("First watermark should be " + Long.MIN_VALUE);
 		}
 
-
 		// verify that we get NUM_ELEMENTS watermarks
 		for (int j = 0; j < numElements; j++) {
 			if (!CustomOperator.finalWatermarks[0].get(j).equals(new Watermark(j))) {

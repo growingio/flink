@@ -139,7 +139,6 @@ public class TimestampsAndPeriodicWatermarksOperator<T>
 //		output.emitWatermark(new Watermark(currentWatermark));
 	}
 
-
 	@Override
 	public void close() throws Exception {
 		super.close();

@@ -48,7 +48,6 @@ public class TimestampsAndPunctuatedWatermarksOperator<T>
 
 	private ListState<Long> restoreWatermarks;
 
-
 	public TimestampsAndPunctuatedWatermarksOperator(AssignerWithPunctuatedWatermarks<T> assigner) {
 		super(assigner);
 		this.chainingStrategy = ChainingStrategy.ALWAYS;

@@ -67,6 +67,7 @@ import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.COMMITS_FAILED_METRICS_COUNTER;
 import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.COMMITS_SUCCEEDED_METRICS_COUNTER;
@@ -506,26 +507,48 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
 
 		subscribedPartitionsToStartOffsets = new HashMap<>();
 		final List<KafkaTopicPartition> allPartitions = partitionDiscoverer.discoverPartitions();
+
+		List<String> restoredTopics = restoredState.entrySet().stream().map((kv) -> kv.getKey().getTopic())
+			.distinct().collect(Collectors.toList());
+		List<String> discoverTopics = allPartitions.stream().map(KafkaTopicPartition::getTopic)
+			.distinct().collect(Collectors.toList());
+		List<String> newTopics = new ArrayList<>();
+
+		for (String topic: discoverTopics) {
+			if (!restoredTopics.contains(topic)) {
+				newTopics.add(topic);
+			}
+		}
+
 		if (restoredState != null) {
 			for (KafkaTopicPartition partition : allPartitions) {
 				if (!restoredState.containsKey(partition)) {
-					restoredState.put(partition, KafkaTopicPartitionStateSentinel.EARLIEST_OFFSET);
+					if (newTopics.contains(partition.getTopic())) {
+						restoredState.put(partition, KafkaTopicPartitionStateSentinel.LATEST_OFFSET);
+					} else {
+						restoredState.put(partition, KafkaTopicPartitionStateSentinel.EARLIEST_OFFSET);
+					}
 				}
 			}
 
 			for (Map.Entry<KafkaTopicPartition, Long> restoredStateEntry : restoredState.entrySet()) {
-				if (!restoredFromOldState) {
-					// seed the partition discoverer with the union state while filtering out
-					// restored partitions that should not be subscribed by this subtask
-					if (KafkaTopicPartitionAssigner.assign(
-						restoredStateEntry.getKey(), getRuntimeContext().getNumberOfParallelSubtasks())
+				String topic = restoredStateEntry.getKey().getTopic();
+				if (discoverTopics.contains(topic)) {
+					if (!restoredFromOldState) {
+						// seed the partition discoverer with the union state while filtering out
+						// restored partitions that should not be subscribed by this subtask
+						if (KafkaTopicPartitionAssigner.assign(
+							restoredStateEntry.getKey(), getRuntimeContext().getNumberOfParallelSubtasks())
 							== getRuntimeContext().getIndexOfThisSubtask()){
+							subscribedPartitionsToStartOffsets.put(restoredStateEntry.getKey(), restoredStateEntry.getValue());
+						}
+					} else {
+						// when restoring from older 1.1 / 1.2 state, the restored state would not be the union state;
+						// in this case, just use the restored state as the subscribed partitions
 						subscribedPartitionsToStartOffsets.put(restoredStateEntry.getKey(), restoredStateEntry.getValue());
 					}
 				} else {
-					// when restoring from older 1.1 / 1.2 state, the restored state would not be the union state;
-					// in this case, just use the restored state as the subscribed partitions
-					subscribedPartitionsToStartOffsets.put(restoredStateEntry.getKey(), restoredStateEntry.getValue());
+					LOG.info("Unable to find topic: " + topic + " in dicovering partitions.");
 				}
 			}
 

@@ -149,6 +149,13 @@ under the License.
 		<japicmp.outputDir>tools/japicmp-output</japicmp.outputDir>
 	</properties>
 
+	<distributionManagement>
+		<repository>
+			<id>gio</id>
+			<url>http://10.0.1.190:8081/nexus/content/repositories/releases</url>
+		</repository>
+	</distributionManagement>
+
 	<dependencies>
 
 		<dependency>

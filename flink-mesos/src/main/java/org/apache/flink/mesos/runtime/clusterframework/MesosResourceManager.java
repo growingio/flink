@@ -42,14 +42,14 @@ import org.apache.flink.mesos.util.MesosArtifactServer;
 import org.apache.flink.mesos.util.MesosConfiguration;
 import org.apache.flink.runtime.clusterframework.ApplicationStatus;
 import org.apache.flink.runtime.clusterframework.ContainerSpecification;
+import org.apache.flink.runtime.clusterframework.TaskExecutorResourceUtils;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.concurrent.FutureUtils;
 import org.apache.flink.runtime.entrypoint.ClusterInformation;
 import org.apache.flink.runtime.heartbeat.HeartbeatServices;
 import org.apache.flink.runtime.highavailability.HighAvailabilityServices;
-import org.apache.flink.runtime.metrics.MetricRegistry;
-import org.apache.flink.runtime.metrics.groups.JobManagerMetricGroup;
+import org.apache.flink.runtime.metrics.groups.ResourceManagerMetricGroup;
 import org.apache.flink.runtime.resourcemanager.JobLeaderIdService;
 import org.apache.flink.runtime.resourcemanager.ResourceManager;
 import org.apache.flink.runtime.resourcemanager.exceptions.ResourceManagerException;
@@ -155,7 +155,6 @@ public class MesosResourceManager extends ResourceManager<RegisteredMesosWorkerN
 			HighAvailabilityServices highAvailabilityServices,
 			HeartbeatServices heartbeatServices,
 			SlotManager slotManager,
-			MetricRegistry metricRegistry,
 			JobLeaderIdService jobLeaderIdService,
 			ClusterInformation clusterInformation,
 			FatalErrorHandler fatalErrorHandler,
@@ -166,7 +165,7 @@ public class MesosResourceManager extends ResourceManager<RegisteredMesosWorkerN
 			MesosTaskManagerParameters taskManagerParameters,
 			ContainerSpecification taskManagerContainerSpec,
 			@Nullable String webUiUrl,
-			JobManagerMetricGroup jobManagerMetricGroup) {
+			ResourceManagerMetricGroup resourceManagerMetricGroup) {
 		super(
 			rpcService,
 			resourceManagerEndpointId,
@@ -174,11 +173,10 @@ public class MesosResourceManager extends ResourceManager<RegisteredMesosWorkerN
 			highAvailabilityServices,
 			heartbeatServices,
 			slotManager,
-			metricRegistry,
 			jobLeaderIdService,
 			clusterInformation,
 			fatalErrorHandler,
-			jobManagerMetricGroup);
+			resourceManagerMetricGroup);
 
 		this.mesosServices = Preconditions.checkNotNull(mesosServices);
 		this.actorSystem = Preconditions.checkNotNull(mesosServices.getLocalActorSystem());
@@ -196,7 +194,9 @@ public class MesosResourceManager extends ResourceManager<RegisteredMesosWorkerN
 		this.workersInLaunch = new HashMap<>(8);
 		this.workersBeingReturned = new HashMap<>(8);
 
-		this.slotsPerWorker = createWorkerSlotProfiles(flinkConfig);
+		this.slotsPerWorker = TaskExecutorResourceUtils.createDefaultWorkerSlotProfiles(
+			taskManagerParameters.containeredParameters().getTaskExecutorResourceSpec(),
+			taskManagerParameters.containeredParameters().numSlots());
 	}
 
 	protected ActorRef createSelfActor() {
@@ -445,8 +445,9 @@ public class MesosResourceManager extends ResourceManager<RegisteredMesosWorkerN
 
 			LaunchableMesosWorker launchable = createLaunchableMesosWorker(worker.taskID());
 
-			LOG.info("Scheduling Mesos task {} with ({} MB, {} cpus).",
-				launchable.taskID().getValue(), launchable.taskRequest().getMemory(), launchable.taskRequest().getCPUs());
+			LOG.info("Scheduling Mesos task {} with ({} MB, {} cpus, {} gpus, {} disk MB, {} Mbps).",
+				launchable.taskID().getValue(), launchable.taskRequest().getMemory(), launchable.taskRequest().getCPUs(),
+				launchable.taskRequest().getScalarRequests().get("gpus"), launchable.taskRequest().getDisk(), launchable.taskRequest().getNetworkMbps());
 
 			// tell the task monitor about the new plans
 			taskMonitor.tell(new TaskMonitor.TaskGoalStateUpdated(extractGoalState(worker)), selfActor);
@@ -753,6 +754,18 @@ public class MesosResourceManager extends ResourceManager<RegisteredMesosWorkerN
 			@Override
 			public TaskSchedulerBuilder withLeaseRejectAction(Action1<VirtualMachineLease> action) {
 				builder.withLeaseRejectAction(action);
+				return this;
+			}
+
+			@Override
+			public TaskSchedulerBuilder withRejectAllExpiredOffers() {
+				builder.withRejectAllExpiredOffers();
+				return this;
+			}
+
+			@Override
+			public TaskSchedulerBuilder withLeaseOfferExpirySecs(long leaseOfferExpirySecs) {
+				builder.withLeaseOfferExpirySecs(leaseOfferExpirySecs);
 				return this;
 			}
 

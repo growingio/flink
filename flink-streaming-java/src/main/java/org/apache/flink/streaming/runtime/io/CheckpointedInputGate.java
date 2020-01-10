@@ -18,7 +18,7 @@
 package org.apache.flink.streaming.runtime.io;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.runtime.io.AsyncDataInput;
+import org.apache.flink.runtime.io.PullingAsyncDataInput;
 import org.apache.flink.runtime.io.network.api.CancelCheckpointMarker;
 import org.apache.flink.runtime.io.network.api.CheckpointBarrier;
 import org.apache.flink.runtime.io.network.api.EndOfPartitionEvent;
@@ -42,7 +42,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * {@link CheckpointBarrier} from the {@link InputGate}.
  */
 @Internal
-public class CheckpointedInputGate implements AsyncDataInput<BufferOrEvent> {
+public class CheckpointedInputGate implements PullingAsyncDataInput<BufferOrEvent> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CheckpointedInputGate.class);
 
@@ -109,9 +109,9 @@ public class CheckpointedInputGate implements AsyncDataInput<BufferOrEvent> {
 	}
 
 	@Override
-	public CompletableFuture<?> isAvailable() {
+	public CompletableFuture<?> getAvailableFuture() {
 		if (bufferStorage.isEmpty()) {
-			return inputGate.isAvailable();
+			return inputGate.getAvailableFuture();
 		}
 		return AVAILABLE;
 	}
@@ -125,7 +125,6 @@ public class CheckpointedInputGate implements AsyncDataInput<BufferOrEvent> {
 				next = inputGate.pollNext();
 			}
 			else {
-				// TODO: FLINK-12536 for non credit-based flow control, getNext method is blocking
 				next = bufferStorage.pollNext();
 				if (!next.isPresent()) {
 					return pollNext();

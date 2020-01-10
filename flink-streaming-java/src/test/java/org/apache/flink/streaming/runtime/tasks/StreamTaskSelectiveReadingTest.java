@@ -28,7 +28,7 @@ import org.apache.flink.streaming.api.operators.InputSelectable;
 import org.apache.flink.streaming.api.operators.InputSelection;
 import org.apache.flink.streaming.api.operators.TwoInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
-import org.apache.flink.streaming.runtime.tasks.mailbox.execution.DefaultActionContext;
+import org.apache.flink.streaming.runtime.tasks.mailbox.MailboxDefaultAction;
 import org.apache.flink.streaming.util.TestAnyModeReadingStreamOperator;
 import org.apache.flink.streaming.util.TestHarnessUtil;
 import org.apache.flink.streaming.util.TestSequentialReadingStreamOperator;
@@ -184,7 +184,7 @@ public class StreamTaskSelectiveReadingTest {
 	// Utilities
 	// ------------------------------------------------------------------------
 
-	private static class TestSelectiveReadingTask<IN1, IN2, OUT> extends TwoInputSelectableStreamTask<IN1, IN2, OUT> {
+	private static class TestSelectiveReadingTask<IN1, IN2, OUT> extends TwoInputStreamTask<IN1, IN2, OUT> {
 
 		private volatile boolean started;
 
@@ -194,14 +194,14 @@ public class StreamTaskSelectiveReadingTest {
 		}
 
 		@Override
-		protected void performDefaultAction(DefaultActionContext context) throws Exception {
+		protected void processInput(MailboxDefaultAction.Controller controller) throws Exception {
 			if (!started) {
 				synchronized (this) {
 					this.wait();
 				}
 			}
 
-			super.performDefaultAction(context);
+			super.processInput(controller);
 		}
 
 		public void startProcessing() {

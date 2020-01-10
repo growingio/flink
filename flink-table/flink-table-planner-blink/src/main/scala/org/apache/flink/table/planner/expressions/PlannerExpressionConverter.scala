@@ -60,7 +60,7 @@ class PlannerExpressionConverter private extends ApiExpressionVisitor[PlannerExp
 
       case REINTERPRET_CAST =>
         assert(children.size == 3)
-        Reinterpret(
+        return Reinterpret(
           children.head.accept(this),
           fromDataTypeToTypeInfo(
             children(1).asInstanceOf[TypeLiteralExpression].getOutputDataType),
@@ -748,12 +748,6 @@ class PlannerExpressionConverter private extends ApiExpressionVisitor[PlannerExp
       }
     }
 
-    else if (hasRoot(logicalType, TIMESTAMP_WITHOUT_TIME_ZONE)) {
-      if (getPrecision(logicalType) <= 3) {
-        return Types.SQL_TIMESTAMP
-      }
-    }
-
     fromDataTypeToTypeInfo(literal.getOutputDataType)
   }
 
@@ -810,9 +804,8 @@ class PlannerExpressionConverter private extends ApiExpressionVisitor[PlannerExp
     )
   }
 
-  override def visit(localReference: LocalReferenceExpression): PlannerExpression =
-    throw new TableException(
-      "Local reference should be handled individually by a call: " + localReference)
+  override def visit(local: LocalReferenceExpression): PlannerExpression =
+    PlannerLocalReference(local.getName, fromDataTypeToTypeInfo(local.getOutputDataType))
 
   override def visit(lookupCall: LookupCallExpression): PlannerExpression =
     throw new TableException("Unsupported function call: " + lookupCall)
@@ -821,7 +814,7 @@ class PlannerExpressionConverter private extends ApiExpressionVisitor[PlannerExp
     other match {
       // already converted planner expressions will pass this visitor without modification
       case plannerExpression: PlannerExpression => plannerExpression
-
+      case expr: RexNodeExpression => RexPlannerExpression(expr.getRexNode)
       case _ =>
         throw new TableException("Unrecognized expression: " + other)
     }

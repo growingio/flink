@@ -26,12 +26,13 @@ import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.common.operators.ResourceSpec;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.dag.Pipeline;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.typeutils.MissingTypeInfo;
-import org.apache.flink.optimizer.plan.StreamingPlan;
 import org.apache.flink.runtime.jobgraph.JobGraph;
+import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
 import org.apache.flink.runtime.jobgraph.ScheduleMode;
 import org.apache.flink.runtime.jobgraph.tasks.AbstractInvokable;
 import org.apache.flink.runtime.state.StateBackend;
@@ -47,7 +48,6 @@ import org.apache.flink.streaming.runtime.tasks.OneInputStreamTask;
 import org.apache.flink.streaming.runtime.tasks.SourceStreamTask;
 import org.apache.flink.streaming.runtime.tasks.StreamIterationHead;
 import org.apache.flink.streaming.runtime.tasks.StreamIterationTail;
-import org.apache.flink.streaming.runtime.tasks.TwoInputSelectableStreamTask;
 import org.apache.flink.streaming.runtime.tasks.TwoInputStreamTask;
 import org.apache.flink.util.OutputTag;
 
@@ -56,10 +56,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -76,7 +72,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  *
  */
 @Internal
-public class StreamGraph extends StreamingPlan {
+public class StreamGraph implements Pipeline {
 
 	private static final Logger LOG = LoggerFactory.getLogger(StreamGraph.class);
 
@@ -88,6 +84,7 @@ public class StreamGraph extends StreamingPlan {
 
 	private final ExecutionConfig executionConfig;
 	private final CheckpointConfig checkpointConfig;
+	private SavepointRestoreSettings savepointRestoreSettings = SavepointRestoreSettings.none();
 
 	private ScheduleMode scheduleMode;
 
@@ -103,6 +100,9 @@ public class StreamGraph extends StreamingPlan {
 	 */
 	private boolean blockingConnectionsBetweenChains;
 
+	/** Flag to indicate whether to put all vertices into the same slot sharing group by default. */
+	private boolean allVerticesInSameSlotSharingGroupByDefault = true;
+
 	private Map<Integer, StreamNode> streamNodes;
 	private Set<Integer> sources;
 	private Set<Integer> sinks;
@@ -115,9 +115,10 @@ public class StreamGraph extends StreamingPlan {
 	private StateBackend stateBackend;
 	private Set<Tuple2<StreamNode, StreamNode>> iterationSourceSinkPairs;
 
-	public StreamGraph(ExecutionConfig executionConfig, CheckpointConfig checkpointConfig) {
+	public StreamGraph(ExecutionConfig executionConfig, CheckpointConfig checkpointConfig, SavepointRestoreSettings savepointRestoreSettings) {
 		this.executionConfig = checkNotNull(executionConfig);
 		this.checkpointConfig = checkNotNull(checkpointConfig);
+		this.savepointRestoreSettings = checkNotNull(savepointRestoreSettings);
 
 		// create an empty new stream graph.
 		clear();
@@ -144,6 +145,14 @@ public class StreamGraph extends StreamingPlan {
 
 	public CheckpointConfig getCheckpointConfig() {
 		return checkpointConfig;
+	}
+
+	public void setSavepointRestoreSettings(SavepointRestoreSettings savepointRestoreSettings) {
+		this.savepointRestoreSettings = savepointRestoreSettings;
+	}
+
+	public SavepointRestoreSettings getSavepointRestoreSettings() {
+		return savepointRestoreSettings;
 	}
 
 	public String getJobName() {
@@ -204,6 +213,25 @@ public class StreamGraph extends StreamingPlan {
 	 */
 	public void setBlockingConnectionsBetweenChains(boolean blockingConnectionsBetweenChains) {
 		this.blockingConnectionsBetweenChains = blockingConnectionsBetweenChains;
+	}
+
+	/**
+	 * Set whether to put all vertices into the same slot sharing group by default.
+	 *
+	 * @param allVerticesInSameSlotSharingGroupByDefault indicates whether to put all vertices
+	 *                                                   into the same slot sharing group by default.
+	 */
+	public void setAllVerticesInSameSlotSharingGroupByDefault(boolean allVerticesInSameSlotSharingGroupByDefault) {
+		this.allVerticesInSameSlotSharingGroupByDefault = allVerticesInSameSlotSharingGroupByDefault;
+	}
+
+	/**
+	 * Gets whether to put all vertices into the same slot sharing group by default.
+	 *
+	 * @return whether to put all vertices into the same slot sharing group by default.
+	 */
+	public boolean isAllVerticesInSameSlotSharingGroupByDefault() {
+		return allVerticesInSameSlotSharingGroupByDefault;
 	}
 
 	// Checkpointing
@@ -283,9 +311,7 @@ public class StreamGraph extends StreamingPlan {
 			TypeInformation<OUT> outTypeInfo,
 			String operatorName) {
 
-		Class<? extends AbstractInvokable> vertexClass =
-			taskOperatorFactory.isOperatorSelectiveReading(Thread.currentThread().getContextClassLoader()) ?
-				TwoInputSelectableStreamTask.class : TwoInputStreamTask.class;
+		Class<? extends AbstractInvokable> vertexClass = TwoInputStreamTask.class;
 
 		addNode(vertexID, slotSharingGroup, coLocationGroup, vertexClass, taskOperatorFactory, operatorName);
 
@@ -536,6 +562,12 @@ public class StreamGraph extends StreamingPlan {
 		}
 	}
 
+	public void setManagedMemoryWeight(int vertexID, int managedMemoryWeight) {
+		if (getStreamNode(vertexID) != null) {
+			getStreamNode(vertexID).setManagedMemoryWeight(managedMemoryWeight);
+		}
+	}
+
 	public void setOneInputStateKey(Integer vertexID, KeySelector<?, ?> keySelector, TypeSerializer<?> keySerializer) {
 		StreamNode node = getStreamNode(vertexID);
 		node.setStatePartitioner1(keySelector);
@@ -681,6 +713,16 @@ public class StreamGraph extends StreamingPlan {
 		sinks.add(sink.getId());
 		setParallelism(sink.getId(), parallelism);
 		setMaxParallelism(sink.getId(), parallelism);
+		// The tail node is always in the same slot sharing group with the head node
+		// so that they can share resources (they do not use non-sharable resources,
+		// i.e. managed memory). There is no contract on how the resources should be
+		// divided for head and tail nodes at the moment. To be simple, we assign all
+		// resources to the head node and set the tail node resources to be zero if
+		// resources are specified.
+		final ResourceSpec tailResources = minResources.equals(ResourceSpec.UNKNOWN)
+			? ResourceSpec.UNKNOWN
+			: ResourceSpec.ZERO;
+		setResources(sink.getId(), tailResources, tailResources);
 
 		iterationSourceSinkPairs.add(new Tuple2<>(source, sink));
 
@@ -722,35 +764,25 @@ public class StreamGraph extends StreamingPlan {
 	}
 
 	/**
-	 * Gets the assembled {@link JobGraph} with a given job id.
+	 * Gets the assembled {@link JobGraph} with a random {@link JobID}.
 	 */
-	@Override
+	public JobGraph getJobGraph() {
+		return getJobGraph(null);
+	}
+
+	/**
+	 * Gets the assembled {@link JobGraph} with a specified {@link JobID}.
+	 */
 	public JobGraph getJobGraph(@Nullable JobID jobID) {
 		return StreamingJobGraphGenerator.createJobGraph(this, jobID);
 	}
 
-	@Override
 	public String getStreamingPlanAsJSON() {
 		try {
 			return new JSONGenerator(this).getJSON();
 		}
 		catch (Exception e) {
 			throw new RuntimeException("JSON plan creation failed", e);
-		}
-	}
-
-	@Override
-	public void dumpStreamingPlanAsJSON(File file) throws IOException {
-		PrintWriter pw = null;
-		try {
-			pw = new PrintWriter(new FileOutputStream(file), false);
-			pw.write(getStreamingPlanAsJSON());
-			pw.flush();
-
-		} finally {
-			if (pw != null) {
-				pw.close();
-			}
 		}
 	}
 }

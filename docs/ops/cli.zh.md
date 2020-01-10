@@ -90,7 +90,7 @@ available.
 
 -   Run example program using a [per-job YARN cluster]({{site.baseurl}}/zh/ops/deployment/yarn_setup.html#run-a-single-flink-job-on-hadoop-yarn) with 2 TaskManagers:
 
-        ./bin/flink run -m yarn-cluster -yn 2 \
+        ./bin/flink run -m yarn-cluster  \
                                ./examples/batch/WordCount.jar \
                                --input hdfs:///user/hamlet.txt --output hdfs:///user/wordcount_out
                                
@@ -106,6 +106,10 @@ available.
 
         ./bin/flink run -py examples/python/table/batch/word_count.py \
                                 -pyfs file:///user.txt,hdfs:///$namenode_address/username.txt
+
+-   提交一个Python Table的作业，并指定依赖的jar包:
+
+        ./bin/flink run -py examples/python/table/batch/word_count.py -j <jarFile>
 
 -   提交一个有多个依赖的Python Table的作业，Python作业的主入口通过pym选项指定:
 
@@ -130,7 +134,7 @@ available.
 
 -   提交一个运行在有两个TaskManager的[per-job YARN cluster]({{site.baseurl}}/ops/deployment/yarn_setup.html#run-a-single-flink-job-on-hadoop-yarn)的Python Table的作业:
 
-        ./bin/flink run -m yarn-cluster -yn 2 \
+        ./bin/flink run -m yarn-cluster \
                                  -py examples/python/table/batch/word_count.py
                                  
 </div>
@@ -306,15 +310,66 @@ Action "run" compiles and runs a program.
                                           program. Optional flag to override the
                                           default value specified in the
                                           configuration.
-     -py,--python <python-file>           指定Python作业的入口，依赖的资源文件可以通过
+     -py,--python <pythonFile>            指定Python作业的入口，依赖的资源文件可以通过
                                           `--pyFiles`进行指定。
-     -pyfs,--pyFiles <python-files>       指定Python作业依赖的一些自定义的python文件，
-                                          如果有多个文件，可以通过逗号(,)进行分隔。支持
-                                          常用的python资源文件，例如(.py/.egg/.zip)。
-                                          (例如:--pyFiles file:///tmp/myresource.zip
+     -pyarch,--pyArchives <arg>           Add python archive files for job. The
+                                          archive files will be extracted to the
+                                          working directory of python UDF
+                                          worker. Currently only zip-format is
+                                          supported. For each archive file, a
+                                          target directory be specified. If the
+                                          target directory name is specified,
+                                          the archive file will be extracted to
+                                          a name can directory with the
+                                          specified name. Otherwise, the archive
+                                          file will be extracted to a directory
+                                          with the same name of the archive
+                                          file. The files uploaded via this
+                                          option are accessible via relative
+                                          path. '#' could be used as the
+                                          separator of the archive file path and
+                                          the target directory name. Comma (',')
+                                          could be used as the separator to
+                                          specify multiple archive files. This
+                                          option can be used to upload the
+                                          virtual environment, the data files
+                                          used in Python UDF (e.g.: --pyArchives
+                                          file:///tmp/py37.zip,file:///tmp/data.
+                                          zip#data --pyExecutable
+                                          py37.zip/py37/bin/python). The data
+                                          files could be accessed in Python UDF,
+                                          e.g.: f = open('data/data.txt', 'r').
+     -pyexec,--pyExecutable <arg>         Specify the path of the python
+                                          interpreter used to execute the python
+                                          UDF worker (e.g.: --pyExecutable
+                                          /usr/local/bin/python3). The python
+                                          UDF worker depends on Python 3.5+,
+                                          Apache Beam (version == 2.15.0), Pip
+                                          (version >= 7.1.0) and SetupTools
+                                          (version >= 37.0.0). Please ensure
+                                          that the specified environment meets
+                                          the above requirements.
+     -pyfs,--pyFiles <pythonFiles>        指定Python作业依赖的一些自定义的python文件。
+                                          这些文件会被添加到本地client和远端UDF worker
+                                          的PYTHONPATH中。支持常用的python资源文件，
+                                          例如(.py/.egg/.zip)。 如果有多个文件，可以通过
+                                          逗号(,)进行分隔。(例如:
+                                          --pyFiles file:///tmp/myresource.zip
                                           ,hdfs:///$namenode_address/myresource2.zip)
-     -pym,--pyModule <python-module>      指定python程序的运行的模块入口，这个选项必须配合
+     -pym,--pyModule <pythonModule>       指定python程序的运行的模块入口，这个选项必须配合
                                           `--pyFiles`一起使用。
+     -pyreq,--pyRequirements <arg>        Specify a requirements.txt file which
+                                          defines the third-party dependencies.
+                                          These dependencies will be installed
+                                          and added to the PYTHONPATH of the
+                                          python UDF worker. A directory which
+                                          contains the installation packages of
+                                          these dependencies could be specified
+                                          optionally. Use '#' as the separator
+                                          if the optional parameter exists
+                                          (e.g.: --pyRequirements
+                                          file:///tmp/requirements.txt#file:///t
+                                          mp/cached_dir).                                                                          
      -q,--sysoutLogging                   If present, suppress logging output to
                                           standard out.
      -s,--fromSavepoint <savepointPath>   Path to a savepoint to restore the job
@@ -349,15 +404,12 @@ Action "run" compiles and runs a program.
      -yj,--yarnjar <arg>                  Path to Flink jar file
      -yjm,--yarnjobManagerMemory <arg>    Memory for JobManager Container
                                           with optional unit (default: MB)
-     -yn,--yarncontainer <arg>            Number of YARN container to allocate
-                                          (=Number of Task Managers)
      -ynm,--yarnname <arg>                Set a custom name for the application
                                           on YARN
      -yq,--yarnquery                      Display available YARN resources
                                           (memory, cores)
      -yqu,--yarnqueue <arg>               Specify YARN queue.
      -ys,--yarnslots <arg>                Number of slots per TaskManager
-     -yst,--yarnstreaming                 Start Flink in streaming mode
      -yt,--yarnship <arg>                 Ship files in the specified directory
                                           (t for transfer), multiple options are
                                           supported.

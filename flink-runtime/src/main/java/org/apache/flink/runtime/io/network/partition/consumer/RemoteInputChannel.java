@@ -229,11 +229,6 @@ public class RemoteInputChannel extends InputChannel implements BufferRecycler, 
 		return isReleased.get();
 	}
 
-	@Override
-	void notifySubpartitionConsumed() {
-		// Nothing to do
-	}
-
 	/**
 	 * Releases all exclusive and floating buffers, closes the partition request client.
 	 */
@@ -341,6 +336,11 @@ public class RemoteInputChannel extends InputChannel implements BufferRecycler, 
 	@VisibleForTesting
 	boolean isWaitingForFloatingBuffers() {
 		return isWaitingForFloatingBuffers;
+	}
+
+	@VisibleForTesting
+	public Buffer getNextReceivedBuffer() {
+		return receivedBuffers.poll();
 	}
 
 	/**

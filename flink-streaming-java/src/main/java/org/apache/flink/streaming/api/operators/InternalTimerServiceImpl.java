@@ -31,6 +31,8 @@ import org.apache.flink.util.CloseableIterator;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +50,8 @@ public class InternalTimerServiceImpl<K, N> implements InternalTimerService<N>, 
 	private final ProcessingTimeService processingTimeService;
 
 	private final KeyContext keyContext;
+
+	private org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	/**
 	 * Processing time timers that are currently in-flight.
@@ -230,7 +234,11 @@ public class InternalTimerServiceImpl<K, N> implements InternalTimerService<N>, 
 		InternalTimer<K, N> timer;
 
 		while ((timer = processingTimeTimersQueue.peek()) != null && timer.getTimestamp() <= time) {
-			processingTimeTimersQueue.poll();
+			try {
+				processingTimeTimersQueue.poll();
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
 			keyContext.setCurrentKey(timer.getKey());
 			triggerTarget.onProcessingTime(timer);
 		}

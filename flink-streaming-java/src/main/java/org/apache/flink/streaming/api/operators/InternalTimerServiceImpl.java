@@ -31,8 +31,6 @@ import org.apache.flink.util.CloseableIterator;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,8 +48,6 @@ public class InternalTimerServiceImpl<K, N> implements InternalTimerService<N>, 
 	private final ProcessingTimeService processingTimeService;
 
 	private final KeyContext keyContext;
-
-	private org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	/**
 	 * Processing time timers that are currently in-flight.
@@ -234,13 +230,9 @@ public class InternalTimerServiceImpl<K, N> implements InternalTimerService<N>, 
 		InternalTimer<K, N> timer;
 
 		while ((timer = processingTimeTimersQueue.peek()) != null && timer.getTimestamp() <= time) {
-			try {
-				processingTimeTimersQueue.poll();
-				keyContext.setCurrentKey(timer.getKey());
-				triggerTarget.onProcessingTime(timer);
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-			}
+			processingTimeTimersQueue.poll();
+			keyContext.setCurrentKey(timer.getKey());
+			triggerTarget.onProcessingTime(timer);
 		}
 
 		if (timer != null && nextTimer == null) {
@@ -248,19 +240,15 @@ public class InternalTimerServiceImpl<K, N> implements InternalTimerService<N>, 
 		}
 	}
 
-		public void advanceWatermark(long time) throws Exception {
+	public void advanceWatermark(long time) throws Exception {
 		currentWatermark = time;
 
 		InternalTimer<K, N> timer;
 
 		while ((timer = eventTimeTimersQueue.peek()) != null && timer.getTimestamp() <= time) {
-			try {
-				eventTimeTimersQueue.poll();
-				keyContext.setCurrentKey(timer.getKey());
-				triggerTarget.onEventTime(timer);
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-			}
+			eventTimeTimersQueue.poll();
+			keyContext.setCurrentKey(timer.getKey());
+			triggerTarget.onEventTime(timer);
 		}
 	}
 

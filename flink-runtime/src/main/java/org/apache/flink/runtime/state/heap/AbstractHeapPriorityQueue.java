@@ -58,7 +58,9 @@ public abstract class AbstractHeapPriorityQueue<T extends HeapPriorityQueueEleme
 	@Override
 	@Nullable
 	public T poll() {
-		return size() > 0 ? removeInternal(getHeadElementIndex()) : null;
+		synchronized (this) {
+			return size() > 0 ? removeInternal(getHeadElementIndex()) : null;
+		}
 	}
 
 	@Override
@@ -70,15 +72,19 @@ public abstract class AbstractHeapPriorityQueue<T extends HeapPriorityQueueEleme
 
 	@Override
 	public boolean add(@Nonnull T toAdd) {
-		addInternal(toAdd);
-		return toAdd.getInternalIndex() == getHeadElementIndex();
+		synchronized (this) {
+			addInternal(toAdd);
+			return toAdd.getInternalIndex() == getHeadElementIndex();
+		}
 	}
 
 	@Override
 	public boolean remove(@Nonnull T toRemove) {
-		final int elementIndex = toRemove.getInternalIndex();
-		removeInternal(elementIndex);
-		return elementIndex == getHeadElementIndex();
+		synchronized (this) {
+			final int elementIndex = toRemove.getInternalIndex();
+			removeInternal(elementIndex);
+			return elementIndex == getHeadElementIndex();
+		}
 	}
 
 	@Override

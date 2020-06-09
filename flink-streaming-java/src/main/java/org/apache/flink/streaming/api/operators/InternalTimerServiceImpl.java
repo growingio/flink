@@ -248,7 +248,7 @@ public class InternalTimerServiceImpl<K, N> implements InternalTimerService<N>, 
 		}
 	}
 
-	public void advanceWatermark(long time) throws Exception {
+		public void advanceWatermark(long time) throws Exception {
 		currentWatermark = time;
 
 		InternalTimer<K, N> timer;

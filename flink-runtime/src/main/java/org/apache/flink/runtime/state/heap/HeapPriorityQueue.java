@@ -107,9 +107,11 @@ public class HeapPriorityQueue<T extends HeapPriorityQueueElement>
 	}
 
 	private void adjustElementAtIndex(T element, int index) {
-		siftDown(index);
-		if (queue[index] == element) {
-			siftUp(index);
+		if (element != null) {
+			siftDown(index);
+			if (queue[index] == element) {
+				siftUp(index);
+			}
 		}
 	}
 

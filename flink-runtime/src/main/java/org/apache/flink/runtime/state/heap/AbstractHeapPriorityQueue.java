@@ -160,8 +160,10 @@ public abstract class AbstractHeapPriorityQueue<T extends HeapPriorityQueueEleme
 	}
 
 	protected void moveElementToIdx(T element, int idx) {
-		queue[idx] = element;
-		element.setInternalIndex(idx);
+		if (element != null) {
+			queue[idx] = element;
+			element.setInternalIndex(idx);
+		}
 	}
 
 	/**

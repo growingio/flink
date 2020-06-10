@@ -105,8 +105,10 @@ public class HeapPriorityQueueSet<T extends HeapPriorityQueueElement>
 	@Override
 	@Nullable
 	public T poll() {
-		final T toRemove = super.poll();
-		return toRemove != null ? getDedupMapForElement(toRemove).remove(toRemove) : null;
+		synchronized (this) {
+			final T toRemove = super.poll();
+			return toRemove != null ? getDedupMapForElement(toRemove).remove(toRemove) : null;
+		}
 	}
 
 	/**
@@ -118,7 +120,9 @@ public class HeapPriorityQueueSet<T extends HeapPriorityQueueElement>
 	 */
 	@Override
 	public boolean add(@Nonnull T element) {
-		return getDedupMapForElement(element).putIfAbsent(element, element) == null && super.add(element);
+		synchronized (this) {
+			return getDedupMapForElement(element).putIfAbsent(element, element) == null && super.add(element);
+		}
 	}
 
 	/**

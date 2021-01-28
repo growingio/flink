@@ -44,7 +44,7 @@ public class KvStateInternalRequest extends MessageBody {
 
         this.kvStateId = Preconditions.checkNotNull(stateId);
         this.serializedKeyAndNamespace = Preconditions.checkNotNull(serializedKeyAndNamespace);
-        this.mergeValue = new byte[]{};
+        this.mergeValue = new byte[] {};
     }
 
     public KvStateInternalRequest(
@@ -73,8 +73,12 @@ public class KvStateInternalRequest extends MessageBody {
     public byte[] serialize() {
 
         // KvStateId + sizeOf(serializedKeyAndNamespace) + serializedKeyAndNamespace
-        final int size = KvStateID.SIZE + Integer.BYTES + serializedKeyAndNamespace.length
-                + mergeValue.length + Integer.BYTES;
+        final int size =
+                KvStateID.SIZE
+                        + Integer.BYTES
+                        + serializedKeyAndNamespace.length
+                        + mergeValue.length
+                        + Integer.BYTES;
 
         return ByteBuffer.allocate(size)
                 .putLong(kvStateId.getLowerPart())

@@ -154,53 +154,65 @@ public abstract class AbstractQueryableStateTestBase extends TestLogger {
 
         DataStream<Tuple2<Integer, Long>> source = env.addSource(new TestKeyRangeSource(numKeys));
 
-        AggregateFunction aggregateFunction = new AggregateFunction<Tuple2<Integer, Long>, Long, Long>(){
+        AggregateFunction aggregateFunction =
+                new AggregateFunction<Tuple2<Integer, Long>, Long, Long>() {
 
-            @Override
-            public Long createAccumulator() {
-                return 0L;
-            }
+                    @Override
+                    public Long createAccumulator() {
+                        return 0L;
+                    }
 
-            @Override
-            public Long add(Tuple2<Integer, Long> value, Long accumulator) {
-                return accumulator + value.f1;
-            }
+                    @Override
+                    public Long add(Tuple2<Integer, Long> value, Long accumulator) {
+                        return accumulator + value.f1;
+                    }
 
-            @Override
-            public Long getResult(Long accumulator) {
-                return accumulator;
-            }
+                    @Override
+                    public Long getResult(Long accumulator) {
+                        return accumulator;
+                    }
 
-            @Override
-            public Long merge(Long a, Long b) {
-                return a + b;
-            }
-        };
+                    @Override
+                    public Long merge(Long a, Long b) {
+                        return a + b;
+                    }
+                };
 
-        AggregatingStateDescriptor<Tuple2<Integer, Long>, Long, Long> stateDesc = new AggregatingStateDescriptor<>("window-contents",
-                aggregateFunction, BasicTypeInfo.LONG_TYPE_INFO.createSerializer(StreamExecutionEnvironment.getExecutionEnvironment().getConfig()));
+        AggregatingStateDescriptor<Tuple2<Integer, Long>, Long, Long> stateDesc =
+                new AggregatingStateDescriptor<>(
+                        "window-contents",
+                        aggregateFunction,
+                        BasicTypeInfo.LONG_TYPE_INFO.createSerializer(
+                                StreamExecutionEnvironment.getExecutionEnvironment().getConfig()));
 
-        TumblingProcessingTimeWindows assigner = TumblingProcessingTimeWindows.of(org.apache.flink.streaming.api.windowing.time.Time.of(1, TimeUnit.DAYS),
-                org.apache.flink.streaming.api.windowing.time.Time.of(16, TimeUnit.HOURS));
-        source.keyBy(new KeySelector<Tuple2<Integer, Long>, Integer>() {
+        TumblingProcessingTimeWindows assigner =
+                TumblingProcessingTimeWindows.of(
+                        org.apache.flink.streaming.api.windowing.time.Time.of(1, TimeUnit.DAYS),
+                        org.apache.flink.streaming.api.windowing.time.Time.of(16, TimeUnit.HOURS));
+        source.keyBy(
+                        new KeySelector<Tuple2<Integer, Long>, Integer>() {
 
-            @Override
-            public Integer getKey(Tuple2<Integer, Long> value) throws Exception {
-                return value.f0;
-            }
-        }).window(assigner).aggregate(aggregateFunction);
+                            @Override
+                            public Integer getKey(Tuple2<Integer, Long> value) throws Exception {
+                                return value.f0;
+                            }
+                        })
+                .window(assigner)
+                .aggregate(aggregateFunction);
 
-        try (AutoCancellableJob autoCancellableJob = new AutoCancellableJob(deadline, clusterClient, env)) {
+        try (AutoCancellableJob autoCancellableJob =
+                new AutoCancellableJob(deadline, clusterClient, env)) {
 
             final JobID jobId = autoCancellableJob.getJobId();
             final JobGraph jobGraph = autoCancellableJob.getJobGraph();
 
-//            clusterClient.setDetached(true);
+            //            clusterClient.setDetached(true);
             clusterClient.submitJob(jobGraph);
 
             final AtomicLongArray counts = new AtomicLongArray(numKeys);
 
-            final List<CompletableFuture<AggregatingState<Tuple2<Integer, Long>, Long>>> futures = new ArrayList<>(numKeys);
+            final List<CompletableFuture<AggregatingState<Tuple2<Integer, Long>, Long>>> futures =
+                    new ArrayList<>(numKeys);
             boolean allNonZero = false;
             while (!allNonZero && deadline.hasTimeLeft()) {
                 allNonZero = true;
@@ -217,34 +229,41 @@ public abstract class AbstractQueryableStateTestBase extends TestLogger {
                     }
 
                     DataOutputSerializer serializer = new DataOutputSerializer(8);
-                    BasicTypeInfo.LONG_TYPE_INFO.createSerializer(env.getConfig()).serialize(1L , serializer);
+                    BasicTypeInfo.LONG_TYPE_INFO
+                            .createSerializer(env.getConfig())
+                            .serialize(1L, serializer);
 
                     long curr = System.currentTimeMillis();
                     long start = curr - curr % 86400000L;
-                    CompletableFuture<AggregatingState<Tuple2<Integer, Long>, Long>> result = getWindowKvStates(
-                            jobId, "window-queryable", key, new TimeWindow(start, start + 86400000L),
-                            BasicTypeInfo.INT_TYPE_INFO, assigner.getWindowSerializer(env.getConfig()), stateDesc,
-                            serializer.getCopyOfBuffer());
-                    result.thenAccept(response -> {
-                        try {
-                            System.out.println(1);
-                            Long res = response.get();
-                            counts.set(key, res);
-                            assertEquals("Key mismatch", key, res.intValue());
-                        } catch (Exception e) {
-                            Assert.fail(e.getMessage());
-                        }
-                    });
+                    CompletableFuture<AggregatingState<Tuple2<Integer, Long>, Long>> result =
+                            getWindowKvStates(
+                                    jobId,
+                                    "window-queryable",
+                                    key,
+                                    new TimeWindow(start, start + 86400000L),
+                                    BasicTypeInfo.INT_TYPE_INFO,
+                                    assigner.getWindowSerializer(env.getConfig()),
+                                    stateDesc,
+                                    serializer.getCopyOfBuffer());
+                    result.thenAccept(
+                            response -> {
+                                try {
+                                    System.out.println(1);
+                                    Long res = response.get();
+                                    counts.set(key, res);
+                                    assertEquals("Key mismatch", key, res.intValue());
+                                } catch (Exception e) {
+                                    Assert.fail(e.getMessage());
+                                }
+                            });
 
                     futures.add(result);
                 }
 
                 // wait for all the futures to complete
-                CompletableFuture
-                        .allOf(futures.toArray(new CompletableFuture<?>[futures.size()]))
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture<?>[futures.size()]))
                         .get(deadline.timeLeft().toMillis(), TimeUnit.MILLISECONDS);
             }
-
         }
     }
 
@@ -255,12 +274,22 @@ public abstract class AbstractQueryableStateTestBase extends TestLogger {
             final TimeWindow namespace,
             final TypeInformation<Integer> keyTypeInfo,
             final TypeSerializer<TimeWindow> namespaceSerializer,
-            final StateDescriptor<AggregatingState<Tuple2<Integer, Long>, Long>, Long> stateDescriptor,
+            final StateDescriptor<AggregatingState<Tuple2<Integer, Long>, Long>, Long>
+                    stateDescriptor,
             final byte[] mergeValue) {
-        final CompletableFuture<AggregatingState<Tuple2<Integer, Long>, Long>> resultFuture = new CompletableFuture<>();
+        final CompletableFuture<AggregatingState<Tuple2<Integer, Long>, Long>> resultFuture =
+                new CompletableFuture<>();
 
-        retry(resultFuture, jobId, queryableStateName, key, namespace, keyTypeInfo,
-                namespaceSerializer, stateDescriptor, mergeValue);
+        retry(
+                resultFuture,
+                jobId,
+                queryableStateName,
+                key,
+                namespace,
+                keyTypeInfo,
+                namespaceSerializer,
+                stateDescriptor,
+                mergeValue);
 
         return resultFuture;
     }
@@ -273,33 +302,50 @@ public abstract class AbstractQueryableStateTestBase extends TestLogger {
             final TimeWindow namespace,
             final TypeInformation<Integer> keyTypeInfo,
             final TypeSerializer<TimeWindow> namespaceSerializer,
-            final StateDescriptor<AggregatingState<Tuple2<Integer, Long>, Long>, Long> stateDescriptor,
+            final StateDescriptor<AggregatingState<Tuple2<Integer, Long>, Long>, Long>
+                    stateDescriptor,
             final byte[] mergeValue) {
 
-        CompletableFuture<AggregatingState<Tuple2<Integer, Long>, Long>> expected = client.getAndMerge(
-                jobId, "window-queryable", key,
-                new TimeWindow(1539360000000L, 1539446400000L),
-                new IntSerializer(), namespaceSerializer, stateDescriptor, mergeValue);
-        expected.whenCompleteAsync((result, throwable) -> {
-            if (throwable != null) {
-                retry(resultFuture, jobId, queryableStateName, key, namespace,
-                        keyTypeInfo, namespaceSerializer, stateDescriptor, mergeValue);
-            } else {
-                resultFuture.complete(result);
-            }
-        }, executor);
+        CompletableFuture<AggregatingState<Tuple2<Integer, Long>, Long>> expected =
+                client.getAndMerge(
+                        jobId,
+                        "window-queryable",
+                        key,
+                        new TimeWindow(1539360000000L, 1539446400000L),
+                        new IntSerializer(),
+                        namespaceSerializer,
+                        stateDescriptor,
+                        mergeValue);
+        expected.whenCompleteAsync(
+                (result, throwable) -> {
+                    if (throwable != null) {
+                        retry(
+                                resultFuture,
+                                jobId,
+                                queryableStateName,
+                                key,
+                                namespace,
+                                keyTypeInfo,
+                                namespaceSerializer,
+                                stateDescriptor,
+                                mergeValue);
+                    } else {
+                        resultFuture.complete(result);
+                    }
+                },
+                executor);
 
         resultFuture.whenComplete((result, throwable) -> expected.cancel(false));
     }
 
-        /**
-         * Runs a simple topology producing random (key, 1) pairs at the sources (where number of keys
-         * is in fixed in range 0...numKeys). The records are keyed and a reducing queryable state
-         * instance is created, which sums up the records.
-         *
-         * <p>After submitting the job in detached mode, the QueryableStateCLient is used to query the
-         * counts of each key in rounds until all keys have non-zero counts.
-         */
+    /**
+     * Runs a simple topology producing random (key, 1) pairs at the sources (where number of keys
+     * is in fixed in range 0...numKeys). The records are keyed and a reducing queryable state
+     * instance is created, which sums up the records.
+     *
+     * <p>After submitting the job in detached mode, the QueryableStateCLient is used to query the
+     * counts of each key in rounds until all keys have non-zero counts.
+     */
     @Test
     public void testQueryableState() throws Exception {
         final Deadline deadline = Deadline.now().plus(TEST_TIMEOUT);

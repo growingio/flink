@@ -53,7 +53,7 @@ public class KvStateRequest extends MessageBody {
         this.stateName = Preconditions.checkNotNull(stateName);
         this.keyHashCode = keyHashCode;
         this.serializedKeyAndNamespace = Preconditions.checkNotNull(serializedKeyAndNamespace);
-        this.mergeValue = new byte[]{};
+        this.mergeValue = new byte[] {};
     }
 
     public KvStateRequest(
@@ -171,7 +171,8 @@ public class KvStateRequest extends MessageBody {
             if (mergeValueLength > 0) {
                 buf.readBytes(mergeValue);
             }
-            return new KvStateRequest(jobId, stateName, keyHashCode, serializedKeyAndNamespace, mergeValue);
+            return new KvStateRequest(
+                    jobId, stateName, keyHashCode, serializedKeyAndNamespace, mergeValue);
         }
     }
 }

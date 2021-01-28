@@ -64,7 +64,7 @@ public class KvStateServerHandler
      * @param server the {@link KvStateServerImpl} using the handler.
      * @param kvStateRegistry registry to query.
      * @param serializer the {@link MessageSerializer} used to (de-) serialize the different
-     *         messages.
+     *     messages.
      * @param stats server statistics collector.
      */
     public KvStateServerHandler(
@@ -93,10 +93,8 @@ public class KvStateServerHandler
 
                 byte[] serializedResult;
                 if (mergeValue.length > 0) {
-                    serializedResult = mergeSerializedValue(
-                            kvState,
-                            serializedKeyAndNamespace,
-                            mergeValue);
+                    serializedResult =
+                            mergeSerializedValue(kvState, serializedKeyAndNamespace, mergeValue);
                 } else {
                     serializedResult = getSerializedValue(kvState, serializedKeyAndNamespace);
                 }
@@ -136,25 +134,25 @@ public class KvStateServerHandler
     private static <K, N, V> byte[] mergeSerializedValue(
             final KvStateEntry<K, N, V> entry,
             final byte[] serializedKeyAndNamespace,
-            final byte[] mergeValue) throws Exception {
+            final byte[] mergeValue)
+            throws Exception {
 
         final InternalKvState<K, N, V> state = entry.getState();
         final KvStateInfo<K, N, V> infoForCurrentThread = entry.getInfoForCurrentThread();
 
-        Tuple2<K, N> keyAndNamespace = KvStateSerializer.deserializeKeyAndNamespace(
-                serializedKeyAndNamespace,
-                infoForCurrentThread.getKeySerializer(),
-                infoForCurrentThread.getNamespaceSerializer());
+        Tuple2<K, N> keyAndNamespace =
+                KvStateSerializer.deserializeKeyAndNamespace(
+                        serializedKeyAndNamespace,
+                        infoForCurrentThread.getKeySerializer(),
+                        infoForCurrentThread.getNamespaceSerializer());
 
         TypeSerializer<V> valueSerializer = infoForCurrentThread.getStateValueSerializer();
-        DataInputDeserializer dis = new DataInputDeserializer(
-                mergeValue,
-                0,
-                mergeValue.length);
+        DataInputDeserializer dis = new DataInputDeserializer(mergeValue, 0, mergeValue.length);
 
         if (state instanceof AbstractHeapMergingState) {
             final AbstractHeapMergingState mergingState = (AbstractHeapMergingState) state;
-            mergingState.mergeStateValue(keyAndNamespace.f0, keyAndNamespace.f1, valueSerializer.deserialize(dis));
+            mergingState.mergeStateValue(
+                    keyAndNamespace.f0, keyAndNamespace.f1, valueSerializer.deserialize(dis));
         } else {
             throw new RuntimeException("State should be instance of AbstractHeapMergingState.");
         }

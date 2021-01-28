@@ -85,24 +85,24 @@ public class QueryableStateClient {
 
     private static final Map<Class<? extends StateDescriptor>, StateFactory> STATE_FACTORIES =
             Stream.of(
-                    Tuple2.of(
-                            ValueStateDescriptor.class,
-                            (StateFactory) ImmutableValueState::createState),
-                    Tuple2.of(
-                            ListStateDescriptor.class,
-                            (StateFactory) ImmutableListState::createState),
-                    Tuple2.of(
-                            MapStateDescriptor.class,
-                            (StateFactory) ImmutableMapState::createState),
-                    Tuple2.of(
-                            AggregatingStateDescriptor.class,
-                            (StateFactory) ImmutableAggregatingState::createState),
-                    Tuple2.of(
-                            ReducingStateDescriptor.class,
-                            (StateFactory) ImmutableReducingState::createState),
-                    Tuple2.of(
-                            FoldingStateDescriptor.class,
-                            (StateFactory) ImmutableFoldingState::createState))
+                            Tuple2.of(
+                                    ValueStateDescriptor.class,
+                                    (StateFactory) ImmutableValueState::createState),
+                            Tuple2.of(
+                                    ListStateDescriptor.class,
+                                    (StateFactory) ImmutableListState::createState),
+                            Tuple2.of(
+                                    MapStateDescriptor.class,
+                                    (StateFactory) ImmutableMapState::createState),
+                            Tuple2.of(
+                                    AggregatingStateDescriptor.class,
+                                    (StateFactory) ImmutableAggregatingState::createState),
+                            Tuple2.of(
+                                    ReducingStateDescriptor.class,
+                                    (StateFactory) ImmutableReducingState::createState),
+                            Tuple2.of(
+                                    FoldingStateDescriptor.class,
+                                    (StateFactory) ImmutableFoldingState::createState))
                     .collect(Collectors.toMap(t -> t.f0, t -> t.f1));
 
     private interface StateFactory {
@@ -134,7 +134,7 @@ public class QueryableStateClient {
      * Create the Queryable State Client.
      *
      * @param remoteAddress the {@link InetAddress address} of the {@code Client Proxy} to connect
-     *         to.
+     *     to.
      * @param remotePort the port of the proxy to connect to.
      */
     public QueryableStateClient(final InetAddress remoteAddress, final int remotePort) {
@@ -193,7 +193,6 @@ public class QueryableStateClient {
      * Replaces the existing {@link ExecutionConfig} (possibly {@code null}), with the provided one.
      *
      * @param config The new {@code configuration}.
-     *
      * @return The old configuration, or {@code null} if none was specified.
      */
     public ExecutionConfig setExecutionConfig(ExecutionConfig config) {
@@ -210,7 +209,6 @@ public class QueryableStateClient {
      * @param key The key we are interested in.
      * @param keyTypeHint A {@link TypeHint} used to extract the type of the key.
      * @param stateDescriptor The {@link StateDescriptor} of the state we want to query.
-     *
      * @return Future holding the immutable {@link State} object containing the result.
      */
     @PublicEvolving
@@ -235,7 +233,6 @@ public class QueryableStateClient {
      * @param key The key we are interested in.
      * @param keyTypeInfo The {@link TypeInformation} of the key.
      * @param stateDescriptor The {@link StateDescriptor} of the state we want to query.
-     *
      * @return Future holding the immutable {@link State} object containing the result.
      */
     @PublicEvolving
@@ -266,7 +263,6 @@ public class QueryableStateClient {
      * @param keyTypeInfo The {@link TypeInformation} of the keys.
      * @param namespaceTypeInfo The {@link TypeInformation} of the namespace.
      * @param stateDescriptor The {@link StateDescriptor} of the state we want to query.
-     *
      * @return Future holding the immutable {@link State} object containing the result.
      */
     public <K, N, S extends State, V> CompletableFuture<S> getKvState(
@@ -328,9 +324,8 @@ public class QueryableStateClient {
      * @param jobId JobID of the job the queryable state belongs to
      * @param queryableStateName Name under which the state is queryable
      * @param keyHashCode Integer hash code of the key (result of a call to {@link
-     *         Object#hashCode()}
+     *     Object#hashCode()}
      * @param serializedKeyAndNamespace Serialized key and namespace to query KvState instance with
-     *
      * @return Future holding the serialized result
      */
     private CompletableFuture<KvStateResponse> getKvState(
@@ -350,9 +345,7 @@ public class QueryableStateClient {
         }
     }
 
-    /**
-     * Same as the method above. Just replace the typeInfo with seriealizer.
-     */
+    /** Same as the method above. Just replace the typeInfo with seriealizer. */
     public <K, N, S extends State, V> CompletableFuture<S> getKvState(
             final JobID jobId,
             final String queryableStateName,
@@ -374,8 +367,9 @@ public class QueryableStateClient {
 
         final byte[] serializedKeyAndNamespace;
         try {
-            serializedKeyAndNamespace = KvStateSerializer
-                    .serializeKeyAndNamespace(key, keySerializer, namespace, namespaceSerializer);
+            serializedKeyAndNamespace =
+                    KvStateSerializer.serializeKeyAndNamespace(
+                            key, keySerializer, namespace, namespaceSerializer);
         } catch (IOException e) {
             return FutureUtils.getFailedFuture(e);
         }
@@ -384,9 +378,7 @@ public class QueryableStateClient {
                 .thenApply(stateResponse -> createState(stateResponse, stateDescriptor));
     }
 
-    /**
-     * Same as the method above. Just replace the typeInfo with seriealizer.
-     */
+    /** Same as the method above. Just replace the typeInfo with seriealizer. */
     public <K, N, S extends State, V> CompletableFuture<S> getAndMerge(
             final JobID jobId,
             final String queryableStateName,
@@ -409,15 +401,20 @@ public class QueryableStateClient {
 
         final byte[] serializedKeyAndNamespace;
         try {
-            serializedKeyAndNamespace = KvStateSerializer
-                    .serializeKeyAndNamespace(key, keySerializer, namespace, namespaceSerializer);
+            serializedKeyAndNamespace =
+                    KvStateSerializer.serializeKeyAndNamespace(
+                            key, keySerializer, namespace, namespaceSerializer);
         } catch (IOException e) {
             return FutureUtils.getFailedFuture(e);
         }
 
-        return getAndMergeKvState(jobId, queryableStateName, key.hashCode(),
-                serializedKeyAndNamespace, mergeValue).thenApply(
-                stateResponse -> createState(stateResponse, stateDescriptor));
+        return getAndMergeKvState(
+                        jobId,
+                        queryableStateName,
+                        key.hashCode(),
+                        serializedKeyAndNamespace,
+                        mergeValue)
+                .thenApply(stateResponse -> createState(stateResponse, stateDescriptor));
     }
 
     private CompletableFuture<KvStateResponse> getAndMergeKvState(
@@ -428,7 +425,13 @@ public class QueryableStateClient {
             final byte[] mergeValue) {
         LOG.debug("Sending State Request to {}.", remoteAddress);
         try {
-            KvStateRequest request = new KvStateRequest(jobId, queryableStateName, keyHashCode, serializedKeyAndNamespace, mergeValue);
+            KvStateRequest request =
+                    new KvStateRequest(
+                            jobId,
+                            queryableStateName,
+                            keyHashCode,
+                            serializedKeyAndNamespace,
+                            mergeValue);
             return client.sendRequest(remoteAddress, request);
         } catch (Exception e) {
             LOG.error("Unable to send KVStateRequest: ", e);

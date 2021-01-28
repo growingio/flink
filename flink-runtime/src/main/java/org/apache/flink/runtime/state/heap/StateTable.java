@@ -205,10 +205,8 @@ public abstract class StateTable<K, N, S>
     }
 
     public <T> void transform(
-            K key,
-            N namespace,
-            T value,
-            StateTransformationFunction<S, T> transformation) throws Exception {
+            K key, N namespace, T value, StateTransformationFunction<S, T> transformation)
+            throws Exception {
         checkKeyNamespacePreconditions(key, namespace);
 
         int keyGroup = keyContext.getCurrentKeyGroupIndex();
